@@ -11,8 +11,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
 } from 'recharts';
 import { RootState } from '../store/store';
 import { reportsApi, journalsApi, invoicesApi } from '../api/endpoints';

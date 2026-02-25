@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { auditApi } from '../api/endpoints';
-import { AuditLog, Pagination } from '../types';
+import { AuditLog } from '../types';
 
 const AuditLogPage: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [entityFilter, setEntityFilter] = useState('');
 
@@ -16,7 +15,6 @@ const AuditLogPage: React.FC = () => {
           entity: entityFilter || undefined,
         });
         setLogs(response.data?.logs || []);
-        setPagination(response.data?.pagination || null);
       } catch {
         // handle error
       } finally {

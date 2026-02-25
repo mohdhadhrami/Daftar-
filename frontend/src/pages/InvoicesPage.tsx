@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { invoicesApi } from '../api/endpoints';
-import { Invoice, Pagination } from '../types';
+import { Invoice } from '../types';
 
 const InvoicesPage: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -17,7 +16,6 @@ const InvoicesPage: React.FC = () => {
         status: statusFilter || undefined,
       });
       setInvoices(response.data?.invoices || []);
-      setPagination(response.data?.pagination || null);
     } catch {
       // handle error
     } finally {

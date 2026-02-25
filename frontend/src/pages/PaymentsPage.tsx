@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { paymentsApi } from '../api/endpoints';
-import { Payment, Pagination } from '../types';
+import { Payment } from '../types';
 
 const PaymentsPage: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
 
@@ -16,7 +15,6 @@ const PaymentsPage: React.FC = () => {
           type: typeFilter || undefined,
         });
         setPayments(response.data?.payments || []);
-        setPagination(response.data?.pagination || null);
       } catch {
         // handle error
       } finally {

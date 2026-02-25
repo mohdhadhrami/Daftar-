@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import { PrismaService } from '../../database/prisma.service';
 import { ReportsService } from '../accounting/services/reports.service';
 
-interface AiResponse<T> {
+export interface AiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
