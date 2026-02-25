@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { accountsApi, journalsApi } from '../../api/endpoints';
 import { Account, JournalEntry, Pagination } from '../../types';
+import { DEMO_ACCOUNTS, DEMO_JOURNALS } from '../../demo/data';
+import { RootState } from '../store';
 
 interface AccountingState {
   accounts: Account[];
@@ -20,7 +22,14 @@ const initialState: AccountingState = {
 
 export const fetchAccounts = createAsyncThunk(
   'accounting/fetchAccounts',
-  async (type?: string) => {
+  async (type: string | undefined, { getState }) => {
+    const state = getState() as RootState;
+    if (state.auth.isDemo) {
+      const accounts = type
+        ? DEMO_ACCOUNTS.filter((a) => a.accountType === type)
+        : DEMO_ACCOUNTS;
+      return accounts;
+    }
     const response: any = await accountsApi.getAll(type);
     return response.data;
   },
@@ -28,7 +37,15 @@ export const fetchAccounts = createAsyncThunk(
 
 export const fetchJournalEntries = createAsyncThunk(
   'accounting/fetchJournalEntries',
-  async (params?: any) => {
+  async (params: any | undefined, { getState }) => {
+    const state = getState() as RootState;
+    if (state.auth.isDemo) {
+      let entries = [...DEMO_JOURNALS];
+      if (params?.status) {
+        entries = entries.filter((e) => e.status === params.status);
+      }
+      return { entries, pagination: { page: 1, limit: 20, total: entries.length, pages: 1 } };
+    }
     const response: any = await journalsApi.getAll(params);
     return response.data;
   },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { login, clearError } from '../store/slices/authSlice';
+import { login, loginDemo, clearError } from '../store/slices/authSlice';
 import { setCurrentCompany } from '../store/slices/companySlice';
 import { RootState, AppDispatch } from '../store/store';
 
@@ -28,6 +28,10 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     dispatch(clearError());
     dispatch(login({ email, password }));
+  };
+
+  const handleDemoLogin = () => {
+    dispatch(loginDemo());
   };
 
   return (
@@ -79,6 +83,27 @@ const LoginPage: React.FC = () => {
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div className="mt-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">or</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleDemoLogin}
+            className="mt-4 w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-2.5 px-4 rounded-md hover:from-emerald-600 hover:to-teal-700 transition font-medium shadow-sm"
+          >
+            Explore Demo Mode
+          </button>
+          <p className="text-xs text-gray-400 text-center mt-2">
+            No backend required - explore with sample data
+          </p>
+        </div>
 
         <p className="mt-4 text-center text-sm text-gray-500">
           Don't have an account?{' '}

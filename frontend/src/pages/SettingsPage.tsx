@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { companiesApi } from '../api/endpoints';
+import { DEMO_USER } from '../demo/data';
 
 const SettingsPage: React.FC = () => {
   const { currentCompany } = useSelector((state: RootState) => state.company);
+  const { isDemo } = useSelector((state: RootState) => state.auth);
   const [members, setMembers] = useState<any[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('viewer');
@@ -12,14 +14,34 @@ const SettingsPage: React.FC = () => {
 
   useEffect(() => {
     if (!currentCompany) return;
+
+    if (isDemo) {
+      setMembers([
+        { id: '1', user: DEMO_USER, role: { name: 'owner' } },
+        { id: '2', user: { id: '2', email: 'sara@daftar.app', firstName: 'Sara', lastName: 'Hassan' }, role: { name: 'accountant' } },
+        { id: '3', user: { id: '3', email: 'omar@daftar.app', firstName: 'Omar', lastName: 'Khalid' }, role: { name: 'sales' } },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     companiesApi.getMembers().then((r: any) => {
       setMembers(r.data || []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [currentCompany]);
+  }, [currentCompany, isDemo]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isDemo) {
+      setMembers([...members, {
+        id: String(members.length + 1),
+        user: { id: String(members.length + 1), email: inviteEmail, firstName: inviteEmail.split('@')[0], lastName: '' },
+        role: { name: inviteRole },
+      }]);
+      setInviteEmail('');
+      return;
+    }
     try {
       await companiesApi.inviteMember({ email: inviteEmail, role: inviteRole });
       setInviteEmail('');

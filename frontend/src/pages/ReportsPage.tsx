@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { reportsApi } from '../api/endpoints';
 import { TrialBalance, IncomeStatement, BalanceSheet } from '../types';
+import { RootState } from '../store/store';
+import { DEMO_TRIAL_BALANCE, DEMO_INCOME_STATEMENT, DEMO_BALANCE_SHEET } from '../demo/data';
 
 type ReportType = 'trial-balance' | 'income-statement' | 'balance-sheet' | 'cash-flow';
 
 const ReportsPage: React.FC = () => {
+  const { isDemo } = useSelector((state: RootState) => state.auth);
   const [activeReport, setActiveReport] = useState<ReportType>('trial-balance');
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
@@ -19,6 +23,35 @@ const ReportsPage: React.FC = () => {
   const generateReport = async () => {
     setLoading(true);
     setReportData(null);
+
+    if (isDemo) {
+      await new Promise((r) => setTimeout(r, 300));
+      switch (activeReport) {
+        case 'trial-balance':
+          setReportData(DEMO_TRIAL_BALANCE);
+          break;
+        case 'income-statement':
+          setReportData(DEMO_INCOME_STATEMENT);
+          break;
+        case 'balance-sheet':
+          setReportData(DEMO_BALANCE_SHEET);
+          break;
+        case 'cash-flow':
+          setReportData({
+            period: { startDate: dateRange.startDate, endDate: dateRange.endDate },
+            operating: { netIncome: 90000, adjustments: [], netCash: 90000 },
+            investing: { items: [{ description: 'Equipment purchase', amount: -75000 }], netCash: -75000 },
+            financing: { items: [{ description: 'Capital investment', amount: 500000 }], netCash: 500000 },
+            netChange: 515000,
+            beginningCash: 0,
+            endingCash: 515000,
+          });
+          break;
+      }
+      setLoading(false);
+      return;
+    }
+
     try {
       let response: any;
       switch (activeReport) {
@@ -176,6 +209,62 @@ const ReportsPage: React.FC = () => {
     </div>
   );
 
+  const renderCashFlow = (data: any) => (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Operating Activities</h3>
+        <div className="flex justify-between py-1 px-4">
+          <span className="text-sm">Net Income</span>
+          <span className="text-sm font-mono">${data.operating?.netIncome?.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between py-2 px-4 border-t font-semibold">
+          <span>Net Cash from Operations</span>
+          <span className="font-mono">${data.operating?.netCash?.toLocaleString()}</span>
+        </div>
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Investing Activities</h3>
+        {data.investing?.items?.map((item: any, i: number) => (
+          <div key={i} className="flex justify-between py-1 px-4">
+            <span className="text-sm">{item.description}</span>
+            <span className="text-sm font-mono">${item.amount?.toLocaleString()}</span>
+          </div>
+        ))}
+        <div className="flex justify-between py-2 px-4 border-t font-semibold">
+          <span>Net Cash from Investing</span>
+          <span className="font-mono">${data.investing?.netCash?.toLocaleString()}</span>
+        </div>
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Financing Activities</h3>
+        {data.financing?.items?.map((item: any, i: number) => (
+          <div key={i} className="flex justify-between py-1 px-4">
+            <span className="text-sm">{item.description}</span>
+            <span className="text-sm font-mono">${item.amount?.toLocaleString()}</span>
+          </div>
+        ))}
+        <div className="flex justify-between py-2 px-4 border-t font-semibold">
+          <span>Net Cash from Financing</span>
+          <span className="font-mono">${data.financing?.netCash?.toLocaleString()}</span>
+        </div>
+      </div>
+      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+        <div className="flex justify-between font-semibold">
+          <span>Net Change in Cash</span>
+          <span className="font-mono">${data.netChange?.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span>Beginning Cash Balance</span>
+          <span className="font-mono">${data.beginningCash?.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between font-bold text-lg border-t pt-2">
+          <span>Ending Cash Balance</span>
+          <span className="font-mono">${data.endingCash?.toLocaleString()}</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Financial Reports</h1>
@@ -187,7 +276,7 @@ const ReportsPage: React.FC = () => {
           { key: 'balance-sheet', label: 'Balance Sheet' },
           { key: 'cash-flow', label: 'Cash Flow' },
         ].map((r) => (
-          <button key={r.key} onClick={() => setActiveReport(r.key as ReportType)}
+          <button key={r.key} onClick={() => { setActiveReport(r.key as ReportType); setReportData(null); }}
             className={`px-4 py-2 text-sm rounded-md ${
               activeReport === r.key ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'
             }`}>{r.label}</button>
@@ -222,14 +311,7 @@ const ReportsPage: React.FC = () => {
           {activeReport === 'trial-balance' && renderTrialBalance(reportData)}
           {activeReport === 'income-statement' && renderIncomeStatement(reportData)}
           {activeReport === 'balance-sheet' && renderBalanceSheet(reportData)}
-          {activeReport === 'cash-flow' && (
-            <div>
-              <h3 className="font-semibold mb-4">Cash Flow Statement</h3>
-              <pre className="text-sm bg-gray-50 p-4 rounded overflow-auto">
-                {JSON.stringify(reportData, null, 2)}
-              </pre>
-            </div>
-          )}
+          {activeReport === 'cash-flow' && renderCashFlow(reportData)}
         </div>
       )}
     </div>

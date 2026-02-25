@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authApi } from '../../api/endpoints';
 import { User, Company } from '../../types';
+import { DEMO_USER, DEMO_COMPANY } from '../../demo/data';
 
 interface AuthState {
   user: User | null;
@@ -9,6 +10,7 @@ interface AuthState {
   companies: Company[];
   isLoading: boolean;
   error: string | null;
+  isDemo: boolean;
 }
 
 const initialState: AuthState = {
@@ -18,6 +20,7 @@ const initialState: AuthState = {
   companies: JSON.parse(localStorage.getItem('companies') || '[]'),
   isLoading: false,
   error: null,
+  isDemo: localStorage.getItem('isDemo') === 'true',
 };
 
 export const login = createAsyncThunk(
@@ -26,8 +29,8 @@ export const login = createAsyncThunk(
     try {
       const response: any = await authApi.login(credentials);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Login failed');
+    } catch {
+      return rejectWithValue('Unable to connect to server. Try Demo Mode to explore the app.');
     }
   },
 );
@@ -47,8 +50,8 @@ export const register = createAsyncThunk(
     try {
       const response: any = await authApi.register(data);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Registration failed');
+    } catch {
+      return rejectWithValue('Unable to connect to server. Backend is required for registration.');
     }
   },
 );
@@ -62,10 +65,12 @@ const authSlice = createSlice({
       state.token = null;
       state.refreshToken = null;
       state.companies = [];
+      state.isDemo = false;
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('companies');
+      localStorage.removeItem('isDemo');
     },
     setTokens(state, action: PayloadAction<{ token: string; refreshToken: string }>) {
       state.token = action.payload.token;
@@ -75,6 +80,20 @@ const authSlice = createSlice({
     },
     clearError(state) {
       state.error = null;
+    },
+    loginDemo(state) {
+      state.user = DEMO_USER;
+      state.token = 'demo-token';
+      state.refreshToken = 'demo-refresh';
+      state.companies = [DEMO_COMPANY];
+      state.isDemo = true;
+      state.isLoading = false;
+      state.error = null;
+      localStorage.setItem('user', JSON.stringify(DEMO_USER));
+      localStorage.setItem('token', 'demo-token');
+      localStorage.setItem('refreshToken', 'demo-refresh');
+      localStorage.setItem('companies', JSON.stringify([DEMO_COMPANY]));
+      localStorage.setItem('isDemo', 'true');
     },
   },
   extraReducers: (builder) => {
@@ -116,5 +135,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, setTokens, clearError } = authSlice.actions;
+export const { logout, setTokens, clearError, loginDemo } = authSlice.actions;
 export default authSlice.reducer;

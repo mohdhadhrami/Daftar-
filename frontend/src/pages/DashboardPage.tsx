@@ -15,11 +15,13 @@ import {
 import { RootState } from '../store/store';
 import { reportsApi, journalsApi, invoicesApi } from '../api/endpoints';
 import { useWebSocket } from '../websocket/useWebSocket';
+import { DEMO_INCOME_STATEMENT, DEMO_BALANCE_SHEET, DEMO_JOURNALS, DEMO_INVOICES } from '../demo/data';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const DashboardPage: React.FC = () => {
   const { currentCompany } = useSelector((state: RootState) => state.company);
+  const { isDemo } = useSelector((state: RootState) => state.auth);
   const { subscribe } = useWebSocket();
 
   const [incomeData, setIncomeData] = useState<any>(null);
@@ -30,6 +32,15 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     if (!currentCompany) return;
+
+    if (isDemo) {
+      setIncomeData(DEMO_INCOME_STATEMENT);
+      setBalanceData(DEMO_BALANCE_SHEET);
+      setRecentJournals(DEMO_JOURNALS.slice(0, 5));
+      setRecentInvoices(DEMO_INVOICES.slice(0, 5));
+      setLoading(false);
+      return;
+    }
 
     const loadDashboard = async () => {
       setLoading(true);
@@ -59,10 +70,11 @@ const DashboardPage: React.FC = () => {
     };
 
     loadDashboard();
-  }, [currentCompany]);
+  }, [currentCompany, isDemo]);
 
   // Real-time updates
   useEffect(() => {
+    if (isDemo) return;
     const unsubs = [
       subscribe('journal:created', () => {
         journalsApi.getAll({ limit: 5 }).then((r: any) => {
@@ -76,7 +88,7 @@ const DashboardPage: React.FC = () => {
       }),
     ];
     return () => unsubs.forEach((u) => u());
-  }, [subscribe]);
+  }, [subscribe, isDemo]);
 
   if (!currentCompany) {
     return (
@@ -128,9 +140,16 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">
-        Dashboard - {currentCompany.name}
-      </h1>
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">
+          Dashboard - {currentCompany.name}
+        </h1>
+        {isDemo && (
+          <span className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded-full font-medium">
+            Demo Mode
+          </span>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -152,7 +171,6 @@ const DashboardPage: React.FC = () => {
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Revenue vs Expenses Bar Chart */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4">Revenue vs Expenses</h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -166,7 +184,6 @@ const DashboardPage: React.FC = () => {
               </ResponsiveContainer>
             </div>
 
-            {/* Expense Breakdown Pie Chart */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4">Expense Breakdown</h3>
               {expenseBreakdown.length > 0 ? (
@@ -197,7 +214,6 @@ const DashboardPage: React.FC = () => {
 
           {/* Recent Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Journal Entries */}
             <div className="bg-white rounded-lg shadow">
               <div className="p-4 border-b">
                 <h3 className="font-semibold">Recent Journal Entries</h3>
@@ -229,7 +245,6 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Recent Invoices */}
             <div className="bg-white rounded-lg shadow">
               <div className="p-4 border-b">
                 <h3 className="font-semibold">Recent Invoices</h3>
